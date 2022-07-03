@@ -55,6 +55,68 @@ fn next_path(path: &Vec<Location>, loc: &Location) -> Vec<Location> {
     next_path
 }
 
+fn cond1(path: &Vec<Location>, step: &Location) -> bool {
+    if let None = path.iter().find(|x| *x == step) {
+        true
+    } else {
+        false
+    }
+}
+
+fn get_small(loc: &Location) -> Option<&str> {
+    match loc {
+        Location::Small(s) => Some(s),
+        _ => None,
+    }
+}
+
+fn cond2(path: &Vec<Location>, step: &Location) -> bool {
+    let small_caves: Vec<&str> = path.iter().filter_map(|l| get_small(l)).collect();
+    for cave in &small_caves {
+        if small_caves.iter().filter(|x| *x == cave).count() > 1 && !cond1(path, step) {
+            false
+        }
+    }
+    true
+}
+
+fn run(
+    steps: &HashMap<Location, HashSet<Location>>,
+    cond: fn(&Vec<Location>, &Location) -> bool,
+) -> u32 {
+    let mut count: u32 = 0;
+    let mut paths = vec![vec![Location::Start]];
+    let mut final_paths = Vec::new();
+    while !paths.is_empty() {
+        let prev_paths = paths.clone();
+        paths.clear();
+        for path in &prev_paths {
+            let tail = path.last().unwrap();
+            if let Some(next_steps) = steps.get(tail) {
+                for step in next_steps {
+                    match step {
+                        Location::Start => {}
+                        Location::End => {
+                            final_paths.push(next_path(path, step));
+                            count += 1;
+                        }
+                        Location::Small(_) => {
+                            if cond(path, step) {
+                                paths.push(next_path(path, step));
+                            }
+                        }
+                        Location::Large(_) => {
+                            paths.push(next_path(path, step));
+                        }
+                    }
+                }
+            }
+        }
+        println!("{}", paths.len());
+    }
+    count
+}
+
 fn main() {
     let input = fs::read_to_string("input").expect("Failed to read file.");
     let connections: Vec<Connection> = input
@@ -69,33 +131,6 @@ fn main() {
         add_connection(&mut steps, c.b.clone(), c.a.clone());
     }
 
-    let mut count: u32 = 0;
-    let mut paths = vec![vec![Location::Start]];
-    while !paths.is_empty() {
-        let prev_paths = paths.clone();
-        paths.clear();
-        for path in &prev_paths {
-            let tail = path.last().unwrap();
-            if let Some(next_steps) = steps.get(tail) {
-                for step in next_steps {
-                    match step {
-                        Location::Start => {}
-                        Location::End => {
-                            count += 1;
-                        }
-                        Location::Small(_) => {
-                            if let None = path.iter().find(|&x| x == step) {
-                                paths.push(next_path(path, step));
-                            }
-                        }
-                        Location::Large(_) => {
-                            paths.push(next_path(path, step));
-                        }
-                    }
-                }
-            }
-        }
-        println!("{}", paths.len());
-    }
-    println!("Part 1: {:?} possible paths", count);
+    println!("Part 1: {:?} possible paths", run(&steps, cond1));
+    println!("Part 2: {:?} possible paths", run(&steps, cond2));
 }
