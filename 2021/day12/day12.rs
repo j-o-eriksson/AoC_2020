@@ -1,8 +1,10 @@
 // AoC 2021 day 11
 
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq)]
 enum Location {
     Small(String),
     Large(String),
@@ -10,40 +12,88 @@ enum Location {
     End,
 }
 
-#[derive(Debug)]
-struct Path {
-    a: Location,
-    b: Location,
-}
-
 fn to_location(s: &str) -> Location {
     match s {
         "end" => Location::End,
         "start" => Location::Start,
-        s if s.chars().all(|c| c.is_lowercase()) => Location::Small(s.to_string()),
-        s => Location::Large(s.to_string()),
+        l if l.chars().all(|c| c.is_lowercase()) => Location::Small(l.to_string()),
+        u => Location::Large(u.to_string()),
     }
 }
 
-impl Path {
-    fn from_string(s: &str) -> Path {
+#[derive(Debug, Clone)]
+struct Connection {
+    a: Location,
+    b: Location,
+}
+
+impl Connection {
+    fn from_string(s: &str) -> Connection {
         let ss: Vec<&str> = s.split("-").collect();
-        Path {
+        Connection {
             a: to_location(ss[0]),
             b: to_location(ss[1]),
         }
     }
 }
 
+fn add_connection(
+    steps: &mut HashMap<Location, HashSet<Location>>,
+    loc_a: Location,
+    loc_b: Location,
+) {
+    if let Some(locs) = steps.get_mut(&loc_a) {
+        locs.insert(loc_b);
+    } else {
+        steps.insert(loc_a, HashSet::from([loc_b]));
+    }
+}
+
 fn main() {
-    let input = fs::read_to_string("test_input").expect("Failed to read file.");
-    let paths: Vec<Path> = input
+    let input = fs::read_to_string("input").expect("Failed to read file.");
+    let connections: Vec<Connection> = input
         .split("\n")
         .filter(|&s| s.len() > 0)
-        .map(Path::from_string)
+        .map(Connection::from_string)
         .collect();
 
-    for p in paths {
-        println!("{:?}-{:?}", p.a, p.b);
+    let mut steps = HashMap::new();
+    for c in &connections {
+        add_connection(&mut steps, c.a.clone(), c.b.clone());
+        add_connection(&mut steps, c.b.clone(), c.a.clone());
     }
+
+    let mut count: u32 = 0;
+    let mut paths: Vec<Vec<Location>> = vec![vec![Location::Start]];
+    while !paths.is_empty() {
+        let prev_paths = paths.clone();
+        paths.clear();
+        for path in &prev_paths {
+            let l = path.last().unwrap();
+            if let Some(candidate_steps) = steps.get(l) {
+                for step in candidate_steps {
+                    match step {
+                        Location::Start => {}
+                        Location::End => {
+                            count += 1;
+                        }
+                        Location::Small(_) => {
+                            if let None = path.iter().find(|&x| x == step) {
+                                let mut p2 = path.clone();
+                                p2.push(step.clone());
+                                paths.push(p2);
+                            }
+                        }
+                        Location::Large(_) => {
+                            let mut p2 = path.clone();
+                            p2.push(step.clone());
+                            paths.push(p2);
+                        }
+                    }
+                }
+            }
+        }
+        println!("{}", paths.len());
+    }
+    println!("{:?}", count);
 }
