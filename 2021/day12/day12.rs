@@ -6,16 +6,16 @@ use std::fs;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 enum Location {
-    Small(String),
-    Large(String),
     Start,
     End,
+    Small(String),
+    Large(String),
 }
 
 fn to_location(s: &str) -> Location {
     match s {
-        "end" => Location::End,
         "start" => Location::Start,
+        "end" => Location::End,
         l if l.chars().all(|c| c.is_lowercase()) => Location::Small(l.to_string()),
         u => Location::Large(u.to_string()),
     }
@@ -49,6 +49,12 @@ fn add_connection(
     }
 }
 
+fn next_path(path: &Vec<Location>, loc: &Location) -> Vec<Location> {
+    let mut next_path = path.clone();
+    next_path.push(loc.clone());
+    next_path
+}
+
 fn main() {
     let input = fs::read_to_string("input").expect("Failed to read file.");
     let connections: Vec<Connection> = input
@@ -64,14 +70,14 @@ fn main() {
     }
 
     let mut count: u32 = 0;
-    let mut paths: Vec<Vec<Location>> = vec![vec![Location::Start]];
+    let mut paths = vec![vec![Location::Start]];
     while !paths.is_empty() {
         let prev_paths = paths.clone();
         paths.clear();
         for path in &prev_paths {
-            let l = path.last().unwrap();
-            if let Some(candidate_steps) = steps.get(l) {
-                for step in candidate_steps {
+            let tail = path.last().unwrap();
+            if let Some(next_steps) = steps.get(tail) {
+                for step in next_steps {
                     match step {
                         Location::Start => {}
                         Location::End => {
@@ -79,15 +85,11 @@ fn main() {
                         }
                         Location::Small(_) => {
                             if let None = path.iter().find(|&x| x == step) {
-                                let mut p2 = path.clone();
-                                p2.push(step.clone());
-                                paths.push(p2);
+                                paths.push(next_path(path, step));
                             }
                         }
                         Location::Large(_) => {
-                            let mut p2 = path.clone();
-                            p2.push(step.clone());
-                            paths.push(p2);
+                            paths.push(next_path(path, step));
                         }
                     }
                 }
@@ -95,5 +97,5 @@ fn main() {
         }
         println!("{}", paths.len());
     }
-    println!("{:?}", count);
+    println!("Part 1: {:?} possible paths", count);
 }
