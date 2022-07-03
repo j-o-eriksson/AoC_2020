@@ -74,7 +74,7 @@ fn cond2(path: &Vec<Location>, step: &Location) -> bool {
     let small_caves: Vec<&str> = path.iter().filter_map(|l| get_small(l)).collect();
     for cave in &small_caves {
         if small_caves.iter().filter(|x| *x == cave).count() > 1 && !cond1(path, step) {
-            false
+            return false;
         }
     }
     true
