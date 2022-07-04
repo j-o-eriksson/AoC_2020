@@ -1,4 +1,4 @@
-// AoC 2021 day 11
+// AoC 2021 day 12
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -72,9 +72,12 @@ fn get_small(loc: &Location) -> Option<&str> {
 
 fn cond2(path: &Vec<Location>, step: &Location) -> bool {
     let small_caves: Vec<&str> = path.iter().filter_map(|l| get_small(l)).collect();
+    let mut visited = HashSet::new();
     for cave in &small_caves {
-        if small_caves.iter().filter(|x| *x == cave).count() > 1 && !cond1(path, step) {
+        if visited.contains(cave) && !cond1(path, step) {
             return false;
+        } else {
+            visited.insert(cave);
         }
     }
     true
