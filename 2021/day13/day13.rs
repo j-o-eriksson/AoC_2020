@@ -22,6 +22,8 @@ impl Fold {
 
 struct Grid {
     data: Vec<Vec<u8>>,
+    n: usize,
+    m: usize,
 }
 
 impl Grid {
@@ -30,7 +32,7 @@ impl Grid {
     }
 
     fn fold_left(&mut self, x: usize) {
-        for y in 0..N {
+        for y in 0..self.n {
             for dx in 1..(x + 1) {
                 let x0 = x - dx;
                 let x1 = x + dx;
@@ -38,10 +40,11 @@ impl Grid {
                 self.data[y][x1] = 0;
             }
         }
+        self.m = x;
     }
 
     fn fold_up(&mut self, y: usize) {
-        for x in 0..N {
+        for x in 0..self.m {
             for dy in 1..(y + 1) {
                 let y0 = y - dy;
                 let y1 = y + dy;
@@ -49,6 +52,7 @@ impl Grid {
                 self.data[y1][x] = 0;
             }
         }
+        self.n = y;
     }
 
     fn fold(&mut self, fold: Fold) {
@@ -66,24 +70,34 @@ fn from_string(s: &str) -> (usize, usize) {
 }
 
 fn main() {
+    let mut grid = Grid {
+        data: vec![vec![0; N]; N],
+        n: N,
+        m: N,
+    };
+
     let (a, b) = include_str!("input").split_once("\n\n").unwrap();
-
-    let mut grid = Grid { data: vec![vec![0; N]; N] };
     a.lines().map(from_string).for_each(|p| grid.add_point(p));
-    // let l1 = b.lines().map(Fold::from_str).next().unwrap();
+
+    // part 1
+    grid.fold(b.lines().map(Fold::from_str).next().unwrap());
+    let count: usize = grid
+        .data
+        .iter()
+        .map(|line| line.iter().filter(|&&x| x != 0).count())
+        .sum();
+    println!("{:?}", count);
+
+    // part 2
     b.lines().map(Fold::from_str).for_each(|f| grid.fold(f));
-
-    // println!("{:?}", grid.data);
-
-    // let count = grid.data.into_iter().map(|line| line.filter(|val| val != 0).count()).sum();
-    let mut count = 0;
-    for line in grid.data {
-        for val in line {
-            if val != 0 {
-                count += 1;
+    for i in 0..grid.n {
+        for j in 0..grid.m {
+            if grid.data[i][j] == 0 {
+                print!(" ");
+            } else {
+                print!("#");
             }
         }
+        println!();
     }
-
-    println!("{:?}", count);
 }
