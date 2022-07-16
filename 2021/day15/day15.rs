@@ -81,16 +81,12 @@ fn run(risks: &Grid) {
     let (n, m) = shape(risks);
     let mut total_risks = vec![vec![10000; m]; n];
     total_risks[0][0] = 0;
-    for y in 0..n {
-        for x in 0..m {
-            explore_neighborhood(x, y, risks, &mut total_risks);
-        }
-    }
+    explore_neighborhood(0, 0, risks, &mut total_risks);
     println!("{}", total_risks.last().unwrap().last().unwrap());
 }
 
 fn main() {
-    let risks: Grid = include_str!("input")
+    let risks: Grid = include_str!("test_input")
         .lines()
         .map(|line| {
             line.chars()
